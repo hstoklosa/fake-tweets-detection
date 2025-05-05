@@ -1,7 +1,15 @@
 import os
+
+import numpy as np
 import torch
 from torch.utils.data import Dataset
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (
+  accuracy_score, 
+  f1_score,
+  classification_report,
+  confusion_matrix,
+  ConfusionMatrixDisplay,  
+)
 from tqdm import tqdm
 
 
@@ -52,6 +60,7 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, scheduler, e
         train_progress_bar = tqdm(train_dataloader, desc="Training", leave=True)
         
         for batch in train_progress_bar:
+            # Clear gradients
             model.zero_grad()
             
             # Get batch data
@@ -185,6 +194,18 @@ def evaluate_model(model, dataloader, device):
         'accuracy': accuracy,
         'f1': f1
     }
+
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return {"accuracy": (predictions == labels).astype(np.float32).mean().item()}
+
+
+def plot_confusion_matrix(y_test, predicted_labels):
+  cm = confusion_matrix(y_test, predicted_labels)
+  disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+  disp.plot()
 
 
 def export_model(model, tokenizer, path):
